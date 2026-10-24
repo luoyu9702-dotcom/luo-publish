@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>Luo Publish</title>
+    <style>
+      body {
+        width: 320px;
+        margin: 0;
+        padding: 16px;
+        color: #1c1c1c;
+        font: 14px/1.45 system-ui, sans-serif;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+      p {
+        margin: 0;
+      }
+      label {
+        display: block;
+        margin-top: 12px;
+        font-size: 12px;
+      }
+      input {
+        box-sizing: border-box;
+        width: 100%;
+        margin-top: 4px;
+        padding: 6px 8px;
+      }
+      button {
+        margin-top: 12px;
+        margin-right: 8px;
+      }
+      .ok {
+        color: #0a7a2f;
+        font-weight: 600;
+      }
+      .bad {
+        color: #a12626;
+      }
+      h2 {
+        margin: 16px 0 8px;
+        font-size: 13px;
+      }
+      ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+      li {
+        margin: 4px 0;
+      }
+      pre {
+        max-height: 180px;
+        overflow: auto;
+        margin: 12px 0 0;
+        padding: 8px;
+        background: #f3f3f3;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Luo Publish</h1>
+    <p id="status">未配对</p>
+    <label>
+      桥地址
+      <input id="base" placeholder="http://127.0.0.1:端口" autocomplete="off" />
+    </label>
+    <label>
+      配对令牌
+      <input id="token" type="password" autocomplete="off" />
+    </label>
+    <button id="pair" type="button">配对</button>
+    <button id="pull" type="button">拉取并填入</button>
+    <h2>最近填表</h2>
+    <ul id="fills">
+      <li id="fill-x">X：尚未填写</li>
+      <li id="fill-bilibili">B站专栏：尚未填写</li>
+      <li id="fill-xiaohongshu">小红书：尚未填写</li>
+      <li id="fill-csdn">CSDN：尚未填写</li>
+    </ul>
+    <pre id="result">尚无拉取结果。已支持的平台会打开编辑器并填入标题和正文；只有在插件里为该平台打开了「自动发布」，才会接着点击发布。</pre>
+    <script src="popup.js"></script>
+  </body>
+</html>

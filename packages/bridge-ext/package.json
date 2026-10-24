@@ -1,0 +1,16 @@
+{
+  "name": "@luo/bridge-ext",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs",
+    "test": "vitest run && pnpm build && node scripts/check-dist.mjs"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.24",
+    "esbuild": "0.25.5",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.7"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Luo Publish Bridge",
+  "version": "0.2.0",
+  "description": "与 luo-publish 配对，拉取草稿并填入 X、小红书、B站专栏和 CSDN 编辑器（自动发布需在插件里按平台开启）",
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting",
+    "alarms"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1/*",
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "https://creator.xiaohongshu.com/*",
+    "https://mp.weixin.qq.com/*",
+    "https://member.bilibili.com/*",
+    "https://mp.csdn.net/*",
+    "https://editor.csdn.net/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Luo Publish 配对",
+    "default_popup": "popup.html"
+  }
+}

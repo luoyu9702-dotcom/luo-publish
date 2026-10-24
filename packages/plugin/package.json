@@ -1,0 +1,21 @@
+{
+  "name": "@luo/publish-plugin",
+  "version": "0.2.0",
+  "private": true,
+  "description": "本地知识库入库 + 多平台填草稿（自动发布默认关闭）",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+    "test": "vitest run && pnpm build && node scripts/check-bundle.mjs"
+  },
+  "license": "0-BSD",
+  "devDependencies": {
+    "@types/node": "^22.15.17",
+    "esbuild": "0.25.5",
+    "obsidian": "latest",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.7"
+  }
+}

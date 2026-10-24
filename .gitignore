@@ -1,0 +1,7 @@
+node_modules/
+packages/plugin/main.js
+packages/bridge-ext/dist/
+*.log
+.DS_Store
+.workbuddy/
+artifacts/

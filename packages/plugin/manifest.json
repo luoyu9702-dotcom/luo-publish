@@ -1,0 +1,9 @@
+{
+  "id": "luo-publish",
+  "name": "Luo Publish",
+  "version": "0.2.0",
+  "minAppVersion": "1.5.0",
+  "description": "本地知识库入库 + 多平台填草稿（自动发布默认关闭）",
+  "author": "yu luo",
+  "isDesktopOnly": true
+}
