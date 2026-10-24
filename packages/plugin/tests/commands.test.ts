@@ -47,19 +47,17 @@ function fakeVault(initial: Record<string, Stored> = {}) {
 }
 
 describe("domain picker", () => {
-  it("offers the seven domains and filters by Chinese label or slug", () => {
+  it("offers the domains and filters by Chinese label or slug", () => {
     expect(suggestDomains("")).toEqual([
       "ai-tools",
       "ai-agents",
       "quant",
       "overseas-accounts",
       "digital-human",
-      "od-exam",
       "inbox",
     ]);
     expect(suggestDomains("收件")).toEqual(["inbox"]);
     expect(suggestDomains("quant")).toEqual(["quant"]);
-    expect(suggestDomains("OD")).toEqual(["od-exam"]);
   });
 });
 

@@ -18,7 +18,7 @@ if (!manifest.host_permissions.includes("http://127.0.0.1/*")) {
 if (manifest.background?.service_worker !== "background.js") throw new Error("service worker path");
 if (manifest.action?.default_popup !== "popup.html") throw new Error("popup path");
 if (manifest.content_scripts) throw new Error("CSDN fill uses executeScript, not a content script");
-for (const host of ["https://mp.csdn.net/*", "https://mp.weixin.qq.com/*", "https://x.com/*", "https://twitter.com/*", "https://member.bilibili.com/*", "https://creator.xiaohongshu.com/*"]) {
+for (const host of ["https://mp.csdn.net/*", "https://x.com/*", "https://twitter.com/*", "https://member.bilibili.com/*", "https://creator.xiaohongshu.com/*"]) {
   if (!manifest.host_permissions.includes(host)) throw new Error(`missing host permission ${host}`);
 }
 if (!background.includes("https://mp.csdn.net/mp_blog/creation/editor")) {
@@ -33,15 +33,8 @@ if (!background.includes("https://member.bilibili.com/york/read-editor")) {
 if (!background.includes("https://creator.xiaohongshu.com/publish/publish?from=menu&target=image")) {
   throw new Error("background missing Xiaohongshu editor URL");
 }
-// The WeChat filler stays unwired: nothing in the bundle may point at its editor.
-if (background.includes("mp.weixin.qq.com") || background.includes("fill-wechat")) {
-  throw new Error("background must not open the WeChat editor");
-}
 for (const snippet of ["尚未填写", "fill-x", "fill-xiaohongshu", "fill-bilibili", "fill-csdn"]) {
   if (!popup.includes(snippet)) throw new Error(`popup missing last fill list (${snippet})`);
-}
-if (popup.includes("公众号") || popup.includes("fill-wechat")) {
-  throw new Error("popup must not list 公众号");
 }
 if (!popupJs.includes("已填入")) throw new Error("popup missing fill status text");
 if (!background.includes("luoLastFills")) throw new Error("last fill storage missing");
@@ -58,7 +51,7 @@ if (!popupJs.includes("拉取") && !popupJs.includes("pending")) throw new Error
 // Source-level scope: only fillers/publish.ts may target a publish control.
 // The wired fillers must stay draft-only, so a stray publish click cannot ship
 // inside a fill step.
-const PUBLISH_MARKERS = ["btn-publish", "发布文章", "js_send", "js_submit", "tweetButton", "xhs-publish", "mp.weixin.qq.com", "fill-wechat"];
+const PUBLISH_MARKERS = ["btn-publish", "发布文章", "js_send", "js_submit", "tweetButton", "xhs-publish"];
 const FILL_SOURCES = [
   "fillers/types.ts",
   "fillers/inject.ts",

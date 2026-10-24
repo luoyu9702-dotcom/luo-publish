@@ -5,12 +5,9 @@ import {
   importPublishAccounts,
   loadAccounts,
   loadAutoPublish,
-  loadTg,
   saveAccounts,
   saveAutoPublish,
-  saveTg,
   type AutoPublishSettings,
-  type TgSettings,
 } from "./settings";
 
 export class AccountSettingTab extends PluginSettingTab {
@@ -42,7 +39,6 @@ export class AccountSettingTab extends PluginSettingTab {
       text: "默认关闭。开启后，扩展在填入草稿后会直接点击对应平台的发布按钮，发布后无法撤回。请确认浏览器里已登录对应平台，并自行承担发布责任。",
     });
     void this.drawAutoPublish();
-    void this.drawTg();
   }
 
   private async drawAutoPublish(): Promise<void> {
@@ -106,32 +102,5 @@ export class AccountSettingTab extends PluginSettingTab {
       const message = err instanceof Error ? err.message : "导入失败";
       new Notice(message);
     }
-  }
-
-  private async drawTg(): Promise<void> {
-    const settings: TgSettings = await loadTg(this.host);
-    const { containerEl } = this;
-    containerEl.createEl("h2", { text: "TG 频道" });
-    containerEl.createEl("p", {
-      text: "OD 精讲通过 Bot API 直发 TG 频道。Token 与频道 ID 只存在本机插件数据里，不进库、不进 git。需自建 bot 并拉入频道设为管理员。",
-    });
-    new Setting(containerEl)
-      .setName("Bot Token")
-      .setDesc("格式 <token>，仅本机存储，不写出库文件。")
-      .addText((text) => {
-        text.setValue(settings.token ?? "").onChange((value) => {
-          settings.token = value;
-          void saveTg(this.host, settings);
-        });
-      });
-    new Setting(containerEl)
-      .setName("频道 ID")
-      .setDesc("频道的 chat_id 或 @username。")
-      .addText((text) => {
-        text.setValue(settings.chatId ?? "").onChange((value) => {
-          settings.chatId = value;
-          void saveTg(this.host, settings);
-        });
-      });
   }
 }

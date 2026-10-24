@@ -169,11 +169,6 @@ describe("draft status enum", () => {
     expect((status as Record<string, string>).weird).toBeUndefined(); // unknown key ignored
   });
 
-  it("preserves the wechat key for OD tasks", () => {
-    const status = parseStatus(JSON.stringify({ ...initialStatus(), wechat: "generated" }));
-    expect(status.wechat).toBe("generated");
-  });
-
   it("markQueued writes queued and leaves the other platforms generated", async () => {
     const { files, vault } = fakeVault();
     await writeOutbox(vault, "demo", "hello", "标题");
@@ -263,14 +258,14 @@ describe("fill reports", () => {
       "raw/outbox/demo": { kind: "folder" },
       "raw/outbox/demo/status.json": {
         kind: "file",
-        text: `${JSON.stringify({ ...initialStatus(), wechat: "queued" }, null, 2)}\n`,
+        text: `${JSON.stringify({ ...initialStatus(), mastodon: "queued" }, null, 2)}\n`,
       },
     });
     const next = await markPublished(vault, "demo", "x");
     expect(next.x).toBe("published");
     const stored = files.get("raw/outbox/demo/status.json");
     if (stored?.kind !== "file") throw new Error("missing status");
-    expect(JSON.parse(stored.text ?? "")).toEqual({ ...initialStatus(), x: "published", wechat: "queued" });
+    expect(JSON.parse(stored.text ?? "")).toEqual({ ...initialStatus(), x: "published", mastodon: "queued" });
   });
 
   it("renders one status line per platform", async () => {

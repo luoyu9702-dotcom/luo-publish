@@ -125,6 +125,6 @@ describe("publish clicker", () => {
   });
 
   it("refuses a platform without a publish plan", async () => {
-    expect(await publishTab(1, "wechat")).toEqual({ ok: false, reason: "该平台暂不支持自动发布" });
+    expect(await publishTab(1, "mastodon")).toEqual({ ok: false, reason: "该平台暂不支持自动发布" });
   });
 });

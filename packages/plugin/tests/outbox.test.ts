@@ -4,7 +4,6 @@ import {
   buildOutbox,
   createOutboxFromNote,
   initialStatus,
-  taskTypeFromPath,
   writeOutbox,
 } from "../src/outbox";
 
@@ -118,62 +117,6 @@ describe("writeOutbox", () => {
     expect(files.get("raw/outbox/demo/csdn.md")).toMatchObject({
       text: buildOutbox("demo", note, "标题").csdn,
     });
-  });
-});
-
-describe("OD task type", () => {
-  it("buildOutbox(od) yields csdn/xiaohongshu/wechat/tg and no x/bilibili", () => {
-    const files = buildOutbox("demo", "hello", "标题", "od");
-    expect(Object.keys(files)).toEqual(["csdn", "xiaohongshu", "wechat", "tg"]);
-    expect(files.csdn).toContain("platform: csdn");
-    expect(files.wechat).toContain("platform: wechat");
-    expect(files.tg).toContain("platform: tg");
-    expect(files.xiaohongshu).toContain("#话题");
-  });
-
-  it("writeOutbox(od) writes four md files and a three-key status.json", async () => {
-    const { files, vault } = fakeVault();
-    await writeOutbox(vault, "demo", "hello", "标题", "", "od");
-    for (const name of ["csdn", "xiaohongshu", "wechat", "tg"] as const) {
-      expect(files.get(`raw/outbox/demo/${name}.md`)?.kind).toBe("file");
-    }
-    expect(files.get("raw/outbox/demo/x.md")).toBeUndefined();
-    expect(files.get("raw/outbox/demo/bilibili.md")).toBeUndefined();
-    const status = files.get("raw/outbox/demo/status.json");
-    if (status?.kind === "file") {
-      expect(JSON.parse(status.text ?? "")).toEqual({
-        csdn: "generated",
-        xiaohongshu: "generated",
-        wechat: "generated",
-      });
-    } else {
-      throw new Error("missing status");
-    }
-  });
-
-  it("infers od from the od-exam source path and honors an explicit override", () => {
-    const odFile = { path: "raw/sources/od-exam/demo.md", basename: "demo" } as TFile;
-    const otherFile = { path: "raw/sources/ai-tools/demo.md", basename: "demo" } as TFile;
-    expect(taskTypeFromPath(odFile.path)).toBe("od");
-    expect(taskTypeFromPath(otherFile.path)).toBe("standard");
-    expect(taskTypeFromPath(odFile.path, "standard")).toBe("standard");
-  });
-
-  it("createOutboxFromNote infers od from an od-exam note", async () => {
-    const { files, vault } = fakeVault({
-      "raw/sources/od-exam/demo.md": { kind: "file", text: "# 标题\n\nhello\n" },
-    });
-    const file = { path: "raw/sources/od-exam/demo.md", basename: "demo" } as TFile;
-    await createOutboxFromNote(vault, file);
-    for (const name of ["csdn", "xiaohongshu", "wechat", "tg"] as const) {
-      expect(files.get(`raw/outbox/demo/${name}.md`)?.kind).toBe("file");
-    }
-    const status = files.get("raw/outbox/demo/status.json");
-    if (status?.kind === "file") {
-      expect(JSON.parse(status.text ?? "")).toHaveProperty("wechat");
-    } else {
-      throw new Error("missing status");
-    }
   });
 });
 

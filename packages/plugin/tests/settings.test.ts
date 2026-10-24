@@ -4,20 +4,14 @@ import { ensureBridgeToken } from "../src/bridge-server";
 import {
   DEFAULT_ACCOUNTS,
   DEFAULT_AUTO_PUBLISH,
-  DEFAULT_TG,
   PUBLISH_ACCOUNTS_PATH,
   autoPublishPlatforms,
   bridgeListenLabel,
-  hasTgConfig,
   importPublishAccounts,
-  loadTg,
-  markTgSent,
   parsePublishAccountsMarkdown,
   readAutoPublish,
-  readTgSent,
   saveAccounts,
   saveAutoPublish,
-  saveTg,
 } from "../src/settings";
 
 const fixture = `# 发布账号
@@ -166,45 +160,5 @@ describe("auto publish settings", () => {
       enabled: true,
       platforms: { x: true, xiaohongshu: false, bilibili: false, csdn: true },
     });
-  });
-});
-
-describe("TG settings", () => {
-  it("starts empty and reports unconfigured", () => {
-    expect(DEFAULT_TG).toEqual({});
-    expect(hasTgConfig({})).toBe(false);
-    expect(hasTgConfig({ token: "a" })).toBe(false);
-    expect(hasTgConfig({ token: "a", chatId: "@c" })).toBe(true);
-  });
-
-  it("saves TG config beside the other data and reads it back", async () => {
-    let saved: unknown = { bridgeToken: "abc" };
-    const store = {
-      async loadData() {
-        return saved;
-      },
-      async saveData(data: unknown) {
-        saved = data;
-      },
-    };
-    await saveTg(store, { token: " tok ", chatId: " @c " });
-    expect(saved).toEqual({ bridgeToken: "abc", tg: { token: "tok", chatId: "@c" } });
-    expect(await loadTg(store)).toEqual({ token: "tok", chatId: "@c" });
-  });
-
-  it("records TG-sent per slug in local plugin data", async () => {
-    let saved: unknown = {};
-    const store = {
-      async loadData() {
-        return saved;
-      },
-      async saveData(data: unknown) {
-        saved = data;
-      },
-    };
-    expect(await readTgSent(store, "demo")).toBe(false);
-    await markTgSent(store, "demo");
-    expect(await readTgSent(store, "demo")).toBe(true);
-    expect(saved).toEqual({ tgSent: { demo: true } });
   });
 });

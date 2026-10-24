@@ -1,6 +1,7 @@
 {
   "name": "luo-publish",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "build:plugin": "pnpm --filter @luo/publish-plugin build",
     "build:ext": "pnpm --filter @luo/bridge-ext build",

@@ -1,12 +1,10 @@
 # Luo Publish 安装（Windows）
 
-桌面版 Obsidian 插件，加上 Chrome / Edge 扩展。插件把笔记入库，并生成 X、小红书、B站专栏、CSDN 的草稿。扩展把草稿填进这四个平台的编辑器。公众号不在一键分发里，扩展也不会打开它。插件里没有大模型。
-
-另有 **OD 精讲** 这种任务类型：生成 CSDN、小红书、公众号（仅文件）、Telegram（仅 Bot API 发送）四份定版，不分发 X/B站，公众号不进队列、TG 不走一键分发。详见 §4 的「OD 精讲任务」。
+桌面版 Obsidian 插件，加上 Chrome / Edge 扩展。插件把笔记入库，并生成 X、小红书、B站专栏、CSDN 的草稿。扩展把草稿填进这四个平台的编辑器。插件里没有大模型。
 
 自动发布**默认关闭**。在插件设置里打开「自动发布总开关」并勾选平台后，扩展填入即代点发布（带确认弹窗）；没开的平台永远只填草稿。
 
-库路径：`C:\Users\10901\Documents\yu-luo-wiki`
+库路径：把你自己的 Obsidian 库路径替换到下面的命令里（例如 `C:\Users\你的用户名\Documents\你的库名`）。
 
 ## 1. 安装插件
 
@@ -14,7 +12,7 @@
 2. 把它们复制到插件目录：
 
 ```powershell
-$dest = "C:\Users\10901\Documents\yu-luo-wiki\.obsidian\plugins\luo-publish"
+$dest = "你的库路径\.obsidian\plugins\luo-publish"
 New-Item -ItemType Directory -Force -Path $dest | Out-Null
 Copy-Item -Force artifacts\luo-publish-plugin\main.js "$dest\main.js"
 Copy-Item -Force artifacts\luo-publish-plugin\manifest.json "$dest\manifest.json"
@@ -29,7 +27,7 @@ Copy-Item -Force artifacts\luo-publish-plugin\manifest.json "$dest\manifest.json
 
 设置 → **Luo Publish**。页顶有只读的 **桥地址**，形如 `http://127.0.0.1:端口`。扩展配对填这个地址。令牌仍用命令 **复制配对令牌**。
 
-下面是 **平台账号**。四个输入框是 X、小红书、B站专栏、CSDN。说明是：这些标识只作对照，不代替浏览器登录。表里的公众号行会被忽略。
+下面是 **平台账号**。四个输入框是 X、小红书、B站专栏、CSDN。说明是：这些标识只作对照，不代替浏览器登录。
 
 按钮 **从 publish-accounts 导入** 读取库里的 `wiki/entities/publish-accounts.md`（一张含「平台」和「账号」列的表）。成功时提示 `已从 publish-accounts 导入`。文件不存在时提示 `未找到 wiki/entities/publish-accounts.md`。账号写在插件自己的 `data.json` 里，不会发给扩展，也不会用来登录。
 
@@ -41,14 +39,6 @@ Copy-Item -Force artifacts\luo-publish-plugin\manifest.json "$dest\manifest.json
 - 打开总开关后，X、小红书、B站专栏、CSDN 四个分平台开关才可勾选。勾了哪个平台，**一键发布**（以及带 autoPublish 的推送）在扩展填入该平台后会代点发布。
 - 自动发布无法撤回：点下去就是真发布。请自行确认内容、账号状态和平台规则。
 - 分平台开关保存在插件 `data.json`，换电脑不跟库走。
-
-### Telegram 频道（仅 OD 精讲用）
-
-同一设置页的 **Telegram** 区块：
-
-- **TG Bot Token**：在 @BotFather 创建机器人后拿到的 token。留空时「发送到 TG 频道」命令会提示先填。
-- **TG 频道 ID**：形如 `@channelname` 或 `-100xxxxxxxxxx`。机器人需先被加进该频道并获发言权限。
-- 这两项只存在插件 `data.json`，不进库、不进 git。发送结果记在插件本地数据里，**不写** `status.json`（TG 不是 `status.json` 的已知 key）。
 
 ## 2. 安装扩展
 
@@ -73,7 +63,7 @@ Copy-Item -Force artifacts\luo-publish-plugin\manifest.json "$dest\manifest.json
 1. 打开一篇 Markdown 笔记，运行 **Luo Publish: 入库当前笔记**，选择领域。未入库的笔记不能一键分发。
 2. 运行 **Luo Publish: 创建分发任务**。草稿写到 `raw/outbox/<slug>/`，四个平台各一份，另有 `status.json`（初始都是 `generated`）。
 3. 单平台推送：运行 **Luo Publish: 推送到浏览器草稿**，选择任务和平台。成功后该平台变为 `filled`，并提示去扩展里拉取。
-4. 四个平台一起送：运行 **Luo Publish: 一键分发**。当前笔记没有入库副本时，提示 `请先入库当前笔记` 并停止，不写队列。已经入库时，若还没有分发任务就按「创建分发任务」的方式建一份，然后把 X、小红书、B站专栏、CSDN 都 `POST /push`。这四个平台的状态变为 `queued`。公众号不会入队，扩展也不会打开公众号编辑器。送进编辑器的正文会去掉笔记开头的 YAML 属性（source、author、url、post_id 等）。标题只放进标题栏，正文里不再重复一行 `# 标题`。段落之间的空行会保留。
+4. 四个平台一起送：运行 **Luo Publish: 一键分发**。当前笔记没有入库副本时，提示 `请先入库当前笔记` 并停止，不写队列。已经入库时，若还没有分发任务就按「创建分发任务」的方式建一份，然后把 X、小红书、B站专栏、CSDN 都 `POST /push`。这四个平台的状态变为 `queued`。送进编辑器的正文会去掉笔记开头的 YAML 属性（source、author、url、post_id 等）。标题只放进标题栏，正文里不再重复一行 `# 标题`。段落之间的空行会保留。
 5. 打开扩展弹窗可点 **拉取并填入**。已配对时不必点：后台大约每 1 分钟会拉，弹窗打开时每 2 秒也会拉。编辑器里应出现标题和正文。
 6. 自己检查内容。需要发布时，在平台页面上手动点发布；或者按下面的「一键发布」走。
 7. 发布完成后，运行 **Luo Publish: 标记已发布**。该平台变为 `published`。
@@ -118,47 +108,24 @@ Copy-Item -Force artifacts\luo-publish-plugin\manifest.json "$dest\manifest.json
 - 创作页与扩展使用同一入口：X `https://x.com/compose/post`，小红书图文，B站 `https://member.bilibili.com/york/read-editor`，CSDN `https://mp.csdn.net/mp_blog/creation/editor`。
 - 把剪贴板内容粘进页面。这一步不会点发布。
 
-### OD 精讲任务（精讲分发补强）
-
-OD 精讲是和上面「四平台标准任务」并行的另一种任务类型，专门给「考试真题精讲」这类内容用。它**不自动点任何平台发布**，也**不走 X / B站**：
-
-1. 入库时选择领域 **OD考试真题**（或在其它领域入库后，用下面的命令显式选 OD）。
-2. 运行 **Luo Publish: 创建 OD 分发任务**。任务夹 `raw/outbox/<slug>/` 下生成四份：`csdn.md`、`xiaohongshu.md`、`wechat.md`、`tg.md`，外加 `status.json`。`status.json` 只有 `csdn` / `xiaohongshu` / `wechat` 三个 key（初始 `generated`），**没有** `x` / `bilibili`。
-3. `wechat.md` 只建文件、不入队、不被推送到浏览器——公众号永远由你在编辑器里手动处理。
-4. `tg.md` 只建文件、不被一键分发处理。它走下面单独的「发送到 TG 频道」命令。
-5. 一键分发对 OD 任务只会把 `csdn` / `xiaohongshu` 入队（skip `wechat`），不碰 `x` / `bilibili`，也不代点发布（OD 强制只填草稿）。
-
-### 发送到 Telegram 频道
-
-OD 任务里的 `tg.md` 通过一个**独立命令**发送，不并入一键分发：
-
-1. 先在设置页填好 **TG Bot Token** 和 **频道 ID**（见上）。
-2. 打开对应 OD 任务的 `tg.md`（或停在该任务任意文件上，slug 取其所在任务夹），运行 **Luo Publish: 发送到 TG 频道**。
-3. 插件先检查：当前任务没有 `tg.md` 时提示去先创建 OD 分发任务；没填 TG 配置时提示先填设置。
-4. 弹出确认框，写明目标频道和正文前 100 字。点确认才真正走 Bot API 发送（`sendMessage`，Markdown 优先，Telegram 拒绝实体时自动降级纯文本重发一次，不连发）。
-5. 发送结果（`ok` / 失败原因）记在插件本地数据（`data.json` 的 `tgSent`），**不写** `status.json`。
-
 ## 5. 手工验收清单
 
 对照设计说明第 8 节。在本机没有 Obsidian 或 Chrome 时，这些项先留空，不要记成已通过。
 
-- [ ] **空库入库一篇 md。** 在空的 `yu-luo-wiki`（或一份空副本）里新建一篇笔记，运行 **入库当前笔记** 并选择一个领域。确认 `raw/sources/<领域>/` 有原文副本，`wiki/sources/` 有摘要页，`wiki/log.md` 有一条 Asia/Shanghai 时间的 ingest 记录，`wiki/index.md` 在对应 `## <领域>` 下有链接。已存在的 raw 文件不被覆盖，并提示未覆盖。
-- [ ] **四平台草稿文件完整。** 对这篇笔记运行 **创建分发任务**。`raw/outbox/<slug>/` 下有 `x.md`、`xiaohongshu.md`、`bilibili.md`、`csdn.md` 和 `status.json`，没有 `wechat.md`。四份正文都还在，且不含笔记的 YAML 属性。标题在 `status` 用的标题栏字段里，正文不再以 `# 标题` 开头。小红书文末有 `#话题`。`status.json` 四个平台都是 `generated`。再次创建同一任务时提示已存在、未覆盖。
+- [ ] **空库入库一篇 md。** 在空库（或一份空副本）里新建一篇笔记，运行 **入库当前笔记** 并选择一个领域。确认 `raw/sources/<领域>/` 有原文副本，`wiki/sources/` 有摘要页，`wiki/log.md` 有一条 Asia/Shanghai 时间的 ingest 记录，`wiki/index.md` 在对应 `## <领域>` 下有链接。已存在的 raw 文件不被覆盖，并提示未覆盖。
+- [ ] **四平台草稿文件完整。** 对这篇笔记运行 **创建分发任务**。`raw/outbox/<slug>/` 下有 `x.md`、`xiaohongshu.md`、`bilibili.md`、`csdn.md` 和 `status.json`。四份正文都还在，且不含笔记的 YAML 属性。标题在标题栏字段里，正文不再以 `# 标题` 开头。小红书文末有 `#话题`。`status.json` 四个平台都是 `generated`。再次创建同一任务时提示已存在、未覆盖。
 - [ ] **配对后至少填一个平台，且不点发布。** 按第 3 节配对。优先用 CSDN 或 X：运行 **推送到浏览器草稿**，再在扩展里 **拉取并填入**。编辑器里有标题和正文（X 只有发帖框，标题在正文前面）。确认没有点击平台的发布按钮。弹窗「最近填表」里该平台显示已填入，`status.json` 里该平台为 `filled`。
 - [ ] **状态回流能看到失败原因。** 在平台未登录（或编辑器打不开）时推送，等扩展回报后运行 **查看分发状态**：该平台显示 `失败`，且 `status.json` 的 `error` 里能看出是未找到编辑区还是其他原因。
 - [ ] **断桥、未登录时的提示能读懂。** 关掉插件或填错端口后再推送，Notice 应说明桥未启动或推送失败，并已复制草稿、打开创作页。扩展未配对时点 **拉取并填入**，状态为 `尚未配对`。平台未登录时，填表结果为失败，原因里能看出未找到编辑区，页面停在登录或空白编辑器，仍然没有点发布。这时改用 **复制并打开创作页**，剪贴板里是草稿，浏览器打开的是上面的创作页。
 - [ ] **图片上传（X 或小红书）。** 笔记里放 1–2 张库内图片（单张 <5MB），对 X 或小红书推送。编辑器里出现图片，正文里的图片行不再重复；跳过的图（不存在、超 5MB、超过 4 张、网络地址）在 Notice 里有说明。B站/CSDN 推送时 Notice 提示手动上传，文字照常填入。
 - [ ] **平台账号只作对照。** 在 **平台账号** 里填一个 id，或用 **从 publish-accounts 导入**。重载后仍在。这些 id 没有登录浏览器。
 - [ ] **未入库不能一键分发。** 打开一篇还没入库的笔记，运行 **一键分发**。Notice 为 `请先入库当前笔记`。没有新的 `raw/outbox/`，队列里也没有这四个平台。
-- [ ] **入库后一键分发，且不自动发布。** 先 **入库当前笔记**，再 **一键分发**。`status.json` 四个平台都是 `queued`，没有公众号。配对后不点 **拉取并填入**，大约 1 分钟内（或重新唤醒扩展后）X、小红书、B站专栏、CSDN 的编辑器里出现草稿。确认没有点击发布，也没有打开公众号。
+- [ ] **入库后一键分发，且不自动发布。** 先 **入库当前笔记**，再 **一键分发**。`status.json` 四个平台都是 `queued`。配对后不点 **拉取并填入**，大约 1 分钟内（或重新唤醒扩展后）X、小红书、B站专栏、CSDN 的编辑器里出现草稿。确认没有点击发布。
 - [ ] **自动发布默认关闭。** 不动设置，运行 **一键发布**。Notice 为 `尚未开启自动发布。请在插件设置里打开「自动发布总开关」并勾选平台。`没有新任务落库（或已有任务不变），队列里没有新内容。
-- [ ] **开启后一键发布会代点发布。** 设置里打开总开关并只勾一个平台（建议先用一个测试账号可承受的平台）。运行 **一键发布**，确认框列出「自动发布：该平台」「仅填入草稿：其余三个」，点 **确认发布**。扩展填入该平台后代点发布（含二次确认弹窗），其余三个只填草稿。回报后 **查看分发状态**：自动发布的平台最终 `published` 或能看到失败原因，其余平台 `filled`。整条链路没有打开公众号。
-- [ ] **OD 分发任务模板正确。** 入库到 **OD考试真题** 领域（或显式选 OD），运行 **创建 OD 分发任务**。`raw/outbox/<slug>/` 下有 `csdn.md`、`xiaohongshu.md`、`wechat.md`、`tg.md` 和 `status.json`，**没有** `x.md` / `bilibili.md`。`status.json` 只有 `csdn` / `xiaohongshu` / `wechat` 三个 key（都是 `generated`），没有 `x` / `bilibili`。`wechat.md`、`tg.md` 都在，但未入队。
-- [ ] **OD 一键分发只填不点。** 对上面的 OD 任务运行 **一键分发**：只有 `csdn` / `xiaohongshu` 变为 `queued`，`wechat` 保持 `generated`，没有 `x` / `bilibili`，也没有代点发布。
-- [ ] **TG 发送到频道（需配置）。** 在设置页填好 TG Bot Token + 频道 ID，打开上面的 OD 任务的 `tg.md`，运行 **发送到 TG 频道**。确认框列出频道和正文前 100 字，点确认后频道里收到消息。未配置 TG 或没有 `tg.md` 时分别给出对应提示。发送结果能在插件本地数据里查到。
+- [ ] **开启后一键发布会代点发布。** 设置里打开总开关并只勾一个平台（建议先用一个测试账号可承受的平台）。运行 **一键发布**，确认框列出「自动发布：该平台」「仅填入草稿：其余三个」，点 **确认发布**。扩展填入该平台后代点发布（含二次确认弹窗），其余三个只填草稿。回报后 **查看分发状态**：自动发布的平台最终 `published` 或能看到失败原因，其余平台 `filled`。
 
 ## 6. 不在这套工具里的事
 
 - 不擅自自动发布。默认设置下所有自动填入都停在草稿；只有你按平台打开自动发布开关后，扩展才会代点发布，且每次都有确认弹窗。
-- 不调用大模型，不改写文案。文案仍由你自己或 Grok Bot 写进笔记。
+- 不调用大模型，不改写文案。文案由你自己写进笔记。
 - 不上传库到云端。桥只在本机。扩展不读库文件。

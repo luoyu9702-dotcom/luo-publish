@@ -1,6 +1,6 @@
 export type Domain =
   | "ai-tools" | "ai-agents" | "quant"
-  | "overseas-accounts" | "digital-human" | "od-exam" | "inbox";
+  | "overseas-accounts" | "digital-human" | "inbox";
 
 export type IngestPlan = {
   rawDest: string;

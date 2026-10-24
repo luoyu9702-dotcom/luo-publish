@@ -168,10 +168,10 @@ describe("background auto-pull", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("does not open a WeChat editor for a stale wechat queue item", async () => {
+  it("skips an unsupported platform queue item without opening any editor", async () => {
     chromeState.store.set("luoPairing", pairing);
     fetchMock.mockImplementation(async () => ({
-      json: async () => pendingBody([{ platform: "wechat", title: "标题", markdown: "正文" }]),
+      json: async () => pendingBody([{ platform: "mastodon", title: "标题", markdown: "正文" }]),
     }));
 
     const mod = await loadBackground();

@@ -6,9 +6,7 @@ import {
   registerFallbackCommand,
   registerIngestCommand,
   registerOutboxCommand,
-  registerOutboxOdCommand,
   registerPublishAllCommand,
-  registerSendTgCommand,
   registerStatusCommands,
   registerStatusViewCommand,
 } from "./commands";
@@ -105,8 +103,6 @@ export default class LuoPublishPlugin extends Plugin {
     registerDistributeCommand(this, endpoint);
     registerPublishAllCommand(this, endpoint, () => loadAutoPublish(this));
     registerStatusViewCommand(this);
-    registerOutboxOdCommand(this);
-    registerSendTgCommand(this);
   }
 
   onunload() {

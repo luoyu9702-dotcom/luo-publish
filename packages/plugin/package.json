@@ -10,7 +10,7 @@
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "test": "vitest run && pnpm build && node scripts/check-bundle.mjs"
   },
-  "license": "0-BSD",
+  "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.15.17",
     "esbuild": "0.25.5",

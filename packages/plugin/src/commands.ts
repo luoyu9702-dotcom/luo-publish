@@ -6,14 +6,10 @@ import {
   createOutboxFromNote,
   FILLABLE_PLATFORMS,
   PLATFORMS,
-  readTaskType,
   slugFromBasename,
   type Platform,
-  type TaskType,
 } from "./outbox";
-import { autoPublishPlatforms, hasTgConfig, loadTg, markTgSent, readTgSent, type AutoPublishSettings } from "./settings";
-import { stripFrontmatter } from "./publish-body";
-import { sendTgMessage } from "./tg";
+import { autoPublishPlatforms, type AutoPublishSettings } from "./settings";
 import {
   PLATFORM_CHOICES,
   listOutboxSlugs,
@@ -31,8 +27,6 @@ export const INGEST_COMMAND_ID = "ingest-current-note";
 export const INGEST_COMMAND_NAME = "入库当前笔记";
 export const OUTBOX_COMMAND_ID = "create-outbox";
 export const OUTBOX_COMMAND_NAME = "创建分发任务";
-export const OUTBOX_OD_COMMAND_ID = "create-outbox-od";
-export const OUTBOX_OD_COMMAND_NAME = "创建 OD 分发任务";
 export const PUSH_COMMAND_ID = "push-draft";
 export const PUSH_COMMAND_NAME = "推送到浏览器草稿";
 export const PUBLISHED_COMMAND_ID = "mark-published";
@@ -45,8 +39,6 @@ export const PUBLISH_ALL_COMMAND_ID = "one-click-publish";
 export const PUBLISH_ALL_COMMAND_NAME = "一键发布";
 export const STATUS_VIEW_COMMAND_ID = "view-distribute-status";
 export const STATUS_VIEW_COMMAND_NAME = "查看分发状态";
-export const TG_COMMAND_ID = "send-tg";
-export const TG_COMMAND_NAME = "发送到 TG 频道";
 
 export const DOMAIN_CHOICES: { id: Domain; label: string }[] = [
   { id: "ai-tools", label: "AI 工具" },
@@ -54,7 +46,6 @@ export const DOMAIN_CHOICES: { id: Domain; label: string }[] = [
   { id: "quant", label: "量化" },
   { id: "overseas-accounts", label: "海外账号" },
   { id: "digital-human", label: "数字人" },
-  { id: "od-exam", label: "OD考试真题" },
   { id: "inbox", label: "收件箱" },
 ];
 
@@ -124,30 +115,6 @@ export function registerOutboxCommand(plugin: Plugin): void {
         ({ dir, notes }) => {
           const message = `已创建分发任务 ${dir}`;
           new Notice(notes.length > 0 ? `${message}\n${notes.join("\n")}` : message);
-        },
-        (err: unknown) => {
-          const message = err instanceof Error ? err.message : "创建分发任务失败";
-          new Notice(message);
-        },
-      );
-    },
-  });
-}
-
-export function registerOutboxOdCommand(plugin: Plugin): void {
-  plugin.addCommand({
-    id: OUTBOX_OD_COMMAND_ID,
-    name: OUTBOX_OD_COMMAND_NAME,
-    callback: () => {
-      const file = plugin.app.workspace.getActiveFile();
-      const blocked = ingestBlockedReason(file);
-      if (blocked || !file) {
-        new Notice(blocked ?? "没有打开的笔记");
-        return;
-      }
-      void createOutboxFromNote(plugin.app.vault, file, "od").then(
-        ({ dir }) => {
-          new Notice(`已创建 OD 分发任务 ${dir}`);
         },
         (err: unknown) => {
           const message = err instanceof Error ? err.message : "创建分发任务失败";
@@ -516,12 +483,9 @@ async function publishActiveNote(
   }
   const statusPath = `raw/outbox/${slug}/status.json`;
   const existing = plugin.app.vault.getAbstractFileByPath(statusPath);
-  // Determine task type from an existing outbox; a missing one is treated as standard.
-  const taskType = existing ? await readTaskType(plugin.app.vault, slug) : "standard";
-  // OD tasks never auto-click publish even if the global switch is on (design non-goal).
-  const autoPlatforms = taskType === "od" ? [] : autoPublishPlatforms(await autoPublishOf());
-  // For a standard task with no auto-publish enabled, stop before creating any task files.
-  if (taskType !== "od" && autoPlatforms.length === 0) {
+  const autoPlatforms = autoPublishPlatforms(await autoPublishOf());
+  // For a task with no auto-publish enabled, stop before creating any task files.
+  if (autoPlatforms.length === 0) {
     new Notice("尚未开启自动发布。请在插件设置里打开「自动发布总开关」并勾选平台。");
     return;
   }
@@ -536,7 +500,6 @@ async function publishActiveNote(
       return;
     }
   }
-  const finalTaskType = await readTaskType(plugin.app.vault, slug);
   let target: BridgeEndpoint | null;
   try {
     target = await endpoint();
@@ -576,11 +539,7 @@ async function publishActiveNote(
     }
     const labels = allFillable.map((platform) => platformLabel(platform)).join("、");
     const autoLabels = autoPlatforms.map((platform) => platformLabel(platform)).join("、");
-    const tail = autoLabels
-      ? `${autoLabels} 将由扩展自动发布，其余仅填入草稿。`
-      : finalTaskType === "od"
-        ? "OD 任务仅填入草稿，发布请到平台手动点。"
-        : "其余仅填入草稿。";
+    const tail = autoLabels ? `${autoLabels} 将由扩展自动发布，其余仅填入草稿。` : "其余仅填入草稿。";
     new Notice(`已加入浏览器队列 ${slug}（${labels}）。${tail}`);
     const allNotes = [...shapingNotes];
     for (const note of pushNotes) {
@@ -590,84 +549,6 @@ async function publishActiveNote(
       new Notice(allNotes.join("\n"));
     }
   }).open();
-}
-
-export function registerSendTgCommand(plugin: Plugin): void {
-  plugin.addCommand({
-    id: TG_COMMAND_ID,
-    name: TG_COMMAND_NAME,
-    callback: async () => {
-      await sendTgFromActiveNote(plugin);
-    },
-  });
-}
-
-async function sendTgFromActiveNote(plugin: Plugin): Promise<void> {
-  const file = plugin.app.workspace.getActiveFile();
-  const blocked = ingestBlockedReason(file);
-  if (blocked || !file) {
-    new Notice(blocked ?? "没有打开的笔记");
-    return;
-  }
-  const slug = slugFromBasename(file.basename);
-  const tgPath = `raw/outbox/${slug}/tg.md`;
-  const tgFile = plugin.app.vault.getAbstractFileByPath(tgPath);
-  if (!tgFile) {
-    new Notice("当前任务无 tg.md（仅 OD 任务生成，请先创建 OD 分发任务）");
-    return;
-  }
-  const settings = await loadTg(plugin);
-  if (!hasTgConfig(settings)) {
-    new Notice("未配置 TG Bot Token 或频道 ID，请在插件设置填写");
-    return;
-  }
-  const body = stripFrontmatter(await plugin.app.vault.read(tgFile as TFile)).trim();
-  if (!body) {
-    new Notice("tg.md 正文为空");
-    return;
-  }
-  const channel = settings.chatId ?? "";
-  const preview = body.slice(0, 100);
-  new TgConfirmModal(plugin.app, channel, preview, async () => {
-    const result = await sendTgMessage(settings, body);
-    if (!result.ok) {
-      new Notice(`TG 发送失败：${result.reason ?? "未知错误"}`);
-      return;
-    }
-    await markTgSent(plugin, slug);
-    new Notice("已发送到 TG 频道");
-  }).open();
-}
-
-export class TgConfirmModal extends Modal {
-  constructor(
-    app: App,
-    private readonly channel: string,
-    private readonly preview: string,
-    private readonly onConfirm: () => void,
-  ) {
-    super(app);
-  }
-
-  onOpen(): void {
-    const { contentEl } = this;
-    contentEl.empty();
-    contentEl.createEl("h2", { text: "发送到 TG 频道" });
-    contentEl.createEl("p", { text: `目标频道：${this.channel}` });
-    contentEl.createEl("p", { text: `正文前 100 字：${this.preview}` });
-    const buttons = contentEl.createDiv({ cls: "luo-publish-confirm-buttons" });
-    buttons.createEl("button", { text: "取消" }).addEventListener("click", () => this.close());
-    buttons.createEl("button", { text: "确认发送", cls: "mod-warning" }).addEventListener("click", () => this.confirm());
-  }
-
-  onClose(): void {
-    this.contentEl.empty();
-  }
-
-  confirm(): Promise<void> {
-    this.close();
-    return Promise.resolve(this.onConfirm());
-  }
 }
 
 export function registerIngestCommand(plugin: Plugin): void {

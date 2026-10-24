@@ -79,8 +79,8 @@ function assertPlatform(platform: string): asserts platform is Platform {
 }
 
 /**
- * Status is now a loose map of known status keys to states. Unknown keys (source, type,
- * tg) and invalid values are ignored so a missing/extra key never breaks the read.
+ * Status is a loose map of known status keys to states. Unknown keys (source)
+ * and invalid values are ignored so a missing/extra key never breaks the read.
  */
 export function parseStatus(text: string): StatusJson {
   let parsed: unknown;
@@ -168,7 +168,7 @@ export function statusLines(status: StatusJson): string[] {
 
 /**
  * Candidate directories for resolving image paths in a draft. The task folder comes
- * first (OD cards live there), then the source folder the note came from.
+ * first, then the source folder the note came from.
  */
 async function sourceDirsOf(vault: Vault, slug: string): Promise<string[]> {
   const dirs: string[] = [`raw/outbox/${slug}`];

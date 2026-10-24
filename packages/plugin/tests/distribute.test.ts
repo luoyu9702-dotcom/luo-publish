@@ -93,44 +93,6 @@ function ingestLayout(root: string): void {
   );
 }
 
-describe("OD 一键分发", () => {
-  it("enqueues only csdn and xiaohongshu, skipping the wechat file-only key", async () => {
-    const root = tempRoot();
-    mkdirSync(path.join(root, "raw", "sources", "od-exam"), { recursive: true });
-    writeFileSync(path.join(root, "raw", "sources", "od-exam", "foo.md"), "# 标题\n\nhello\n", "utf8");
-    mkdirSync(path.join(root, "wiki", "sources"), { recursive: true });
-    writeFileSync(
-      path.join(root, "wiki", "sources", "foo.md"),
-      buildSourceSummary({ title: "foo", rawPath: "raw/sources/od-exam/foo.md", ingested: "2026-10-24" }),
-      "utf8",
-    );
-    const queuePath = path.join(root, "plugin", "data", "push-queue.json");
-    const handle = await startBridge("secret-token", queuePath);
-    handles.push(handle);
-    const { file, stored } = activeNote("# 标题\n\nhello\n");
-    const { files, vault } = fakeVault(root, stored);
-    // Pre-create the OD outbox so type stays od (active note path is not under od-exam here).
-    await writeOutbox(vault, "foo", "# 标题\n\nhello\n", "标题", "raw/sources/od-exam/foo.md", "od");
-    const { commands, plugin } = harness(vault, file);
-    registerDistributeCommand(plugin, async () => ({ port: handle.port, token: "secret-token" }));
-
-    await commands[0]?.callback();
-
-    const status = files.get("raw/outbox/foo/status.json");
-    expect(status?.kind).toBe("file");
-    if (status?.kind === "file") {
-      const parsed = JSON.parse(status.text ?? "");
-      expect(parsed.csdn).toBe("queued");
-      expect(parsed.xiaohongshu).toBe("queued");
-      expect(parsed.wechat).toBe("generated");
-      expect(parsed.x).toBeUndefined();
-      expect(parsed.bilibili).toBeUndefined();
-    }
-    const storedQueue = loadQueue(queuePath);
-    expect(storedQueue.map((item) => item.platform).sort()).toEqual(["csdn", "xiaohongshu"]);
-  });
-});
-
 describe("一键分发", () => {
   it("registers one-click-distribute as 一键分发", () => {
     const root = tempRoot();

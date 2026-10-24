@@ -5,19 +5,15 @@ export type Platform = "x" | "xiaohongshu" | "bilibili" | "csdn";
 
 export const PLATFORMS: readonly Platform[] = ["x", "xiaohongshu", "bilibili", "csdn"];
 
-/** Platforms the bridge/extension can actually fill. wechat is file-only; tg is sent via Bot API. */
+/** Platforms the bridge/extension can actually fill. */
 export const FILLABLE_PLATFORMS: readonly Platform[] = PLATFORMS;
 
-/** A task folder can be the 4-platform standard set, or an OD exam set (csdn/xiaohongshu/wechat/tg). */
-export type TaskType = "standard" | "od";
-
-/** Status keys that may appear in status.json. wechat is generated but never filled. */
-export type StatusKey = Platform | "wechat";
+/** Status keys that may appear in status.json. */
+export type StatusKey = Platform;
 
 export const STANDARD_STATUS_KEYS: readonly StatusKey[] = [...PLATFORMS];
-export const OD_STATUS_KEYS: readonly StatusKey[] = ["csdn", "xiaohongshu", "wechat"];
 
-export const KNOWN_STATUS_KEYS: readonly string[] = [...PLATFORMS, "wechat"];
+export const KNOWN_STATUS_KEYS: readonly string[] = [...PLATFORMS];
 
 export type DraftState = "generated" | "queued" | "filled" | "published" | "failed";
 
@@ -34,7 +30,6 @@ export const STATUS_KEY_LABELS: Record<string, string> = {
   xiaohongshu: "小红书",
   bilibili: "B站专栏",
   csdn: "CSDN",
-  wechat: "公众号(仅文件)",
 };
 
 export type StatusJson = Record<string, DraftState>;
@@ -56,11 +51,6 @@ title: ${JSON.stringify(title)}
 }
 
 /**
- * Draft files for a task folder, keyed by file stem (x / xiaohongshu / bilibili / csdn,
- * or for OD: csdn / xiaohongshu / wechat / tg). Each value is a full markdown file
- * with the shared platform frontmatter header.
- */
-/**
  * Build the draft files and collect the per-platform clamp/limit notes. Notes come
  * from shapeDraft (title truncation, body too short for B站, etc.) so the caller can
  * surface them in a Notice after writing the task folder.
@@ -69,34 +59,21 @@ export function buildOutboxWithNotes(
   slug: string,
   body: string,
   titleHint: string,
-  type: TaskType = "standard",
 ): { files: Record<string, string>; notes: string[] } {
   const title = humanTitle(body, titleHint);
   const article = sanitizePublishBody(body, title);
   const files: Record<string, string> = {};
   const notes: string[] = [];
-  if (type === "standard") {
-    for (const platform of PLATFORMS) {
-      const item = shapeDraft(platform, title, article);
-      files[platform] = `${header(platform, slug, item.title)}${item.markdown}`;
-      notes.push(...item.notes);
-    }
-    return { files, notes };
-  }
-  for (const platform of ["csdn", "xiaohongshu"] as const) {
+  for (const platform of PLATFORMS) {
     const item = shapeDraft(platform, title, article);
     files[platform] = `${header(platform, slug, item.title)}${item.markdown}`;
     notes.push(...item.notes);
   }
-  // wechat and tg are file-only channels: same sanitized article, same frontmatter shape.
-  for (const key of ["wechat", "tg"] as const) {
-    files[key] = `${header(key, slug, title)}${article}`;
-  }
   return { files, notes };
 }
 
-export function buildOutbox(slug: string, body: string, titleHint: string, type: TaskType = "standard"): Record<string, string> {
-  return buildOutboxWithNotes(slug, body, titleHint, type).files;
+export function buildOutbox(slug: string, body: string, titleHint: string): Record<string, string> {
+  return buildOutboxWithNotes(slug, body, titleHint).files;
 }
 
 export function slugFromBasename(basename: string): string {
@@ -123,14 +100,7 @@ async function ensureParentFolders(vault: Vault, filePath: string): Promise<void
   }
 }
 
-export type OutboxWriteResult = { dir: string; notes: string[]; type: TaskType };
-
-/** Derive the OD/standard task type from a note's vault path, or honor an explicit override. */
-export function taskTypeFromPath(path: string, override?: TaskType): TaskType {
-  if (override) return override;
-  const match = /raw\/sources\/([^/]+)\//.exec(path);
-  return match?.[1] === "od-exam" ? "od" : "standard";
-}
+export type OutboxWriteResult = { dir: string; notes: string[] };
 
 export async function writeOutbox(
   vault: Vault,
@@ -138,7 +108,6 @@ export async function writeOutbox(
   body: string,
   title: string,
   sourcePath = "",
-  type: TaskType = "standard",
 ): Promise<OutboxWriteResult> {
   if (!slug || slug.includes("/") || slug.includes("\\") || slug === "." || slug === "..") {
     throw new Error(`无效的 slug：${slug}`);
@@ -148,41 +117,25 @@ export async function writeOutbox(
   if (vault.getAbstractFileByPath(statusPath)) {
     throw new Error(`分发任务已存在，未覆盖：${dir}`);
   }
-  const { files: drafts, notes } = buildOutboxWithNotes(slug, body, title, type);
+  const { files: drafts, notes } = buildOutboxWithNotes(slug, body, title);
   for (const key of Object.keys(drafts)) {
     const path = `${dir}/${key}.md`;
     await ensureParentFolders(vault, path);
     await vault.create(path, drafts[key] ?? "");
   }
   await ensureParentFolders(vault, statusPath);
-  const statusKeys = type === "od" ? OD_STATUS_KEYS : STANDARD_STATUS_KEYS;
-  const meta: Record<string, unknown> = { ...initialStatus(statusKeys) };
+  const meta: Record<string, unknown> = { ...initialStatus(STANDARD_STATUS_KEYS) };
   if (sourcePath) meta.source = sourcePath;
   await vault.create(statusPath, `${JSON.stringify(meta, null, 2)}\n`);
-  return { dir, notes, type };
+  return { dir, notes };
 }
 
 export async function createOutboxFromNote(
   vault: Vault,
   file: TFile,
-  typeOverride?: TaskType,
 ): Promise<OutboxWriteResult> {
   const body = await vault.read(file);
   const title = titleFromNote(body, file.basename);
   const slug = slugFromBasename(file.basename);
-  const type = taskTypeFromPath(file.path, typeOverride);
-  return writeOutbox(vault, slug, body, title, file.path, type);
-}
-
-/** Read the OD/standard type of a task. OD status carries a wechat key; standard does not. */
-export async function readTaskType(vault: Vault, slug: string): Promise<TaskType> {
-  const file = vault.getAbstractFileByPath(`raw/outbox/${slug}/status.json`);
-  if (!file) return "standard";
-  try {
-    const parsed: unknown = JSON.parse(await vault.read(file as TFile));
-    const record = parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
-    return typeof record.wechat === "string" ? "od" : "standard";
-  } catch {
-    return "standard";
-  }
+  return writeOutbox(vault, slug, body, title, file.path);
 }
